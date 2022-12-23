@@ -139,18 +139,20 @@ async function downloadFiles(c: Course, courseDir: string) {
     await fs.mkdirs(folder)
     const destPath = path.resolve(folder, file.filename);
 
-    await fIfNeeded(
-      ()=>new Promise((resolve, reject) => {
-        var stream = fs.createWriteStream(destPath);
-        stream.on('finish',resolve);
-        stream.on('error', reject)
-        request.get(file.url)
-          .set('Authorization', `Bearer ${commander.token}`)
-          .pipe(stream);
-      }),
-      destPath,
-      new Date(file.modified_at)
-    )
+    if (file.url) {
+      await fIfNeeded(
+        ()=>new Promise((resolve, reject) => {
+          var stream = fs.createWriteStream(destPath);
+          stream.on('finish',resolve);
+          stream.on('error', reject)
+          request.get(file.url)
+            .set('Authorization', `Bearer ${commander.token}`)
+            .pipe(stream);
+        }),
+        destPath,
+        new Date(file.modified_at)
+      )
+    }
   }
 }
 async function downloadModules(c: Course, courseDir: string) {
@@ -167,6 +169,7 @@ async function downloadModules(c: Course, courseDir: string) {
     for (let item of items){
       // this can be any of a number of different interfaces.
       // it might contain a download link for a file which is not available under the /files api
+      if (!item.url) continue;
       const thing = await getJson(item.url)
 
       if (!thing.url||!thing.filename) continue;
